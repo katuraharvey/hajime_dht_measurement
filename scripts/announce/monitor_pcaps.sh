@@ -1,6 +1,6 @@
 #!/bin/sh
-CAPTURE_DIR="/home/ubuntu/hajime_dht/captures/"
-DATA_DIR="/home/ubuntu/hajime_dht/data/announce"
+CAPTURE_DIR="/home/ubuntu/hajime_dht_measurement/data/captures/"
+DATA_DIR="/home/ubuntu/hajime_dht_measurement/data/announce"
 
 last_created=""
 inotifywait -m -e create --format '%w%f' "$CAPTURE_DIR" | while read f

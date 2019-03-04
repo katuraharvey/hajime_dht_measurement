@@ -5,7 +5,7 @@ import re
 from datetime import datetime
 import time
 
-PORT_MAP_FILE = "/home/ubuntu/hajime_dht/config/port_map.txt"
+PORT_MAP_FILE = "/home/ubuntu/hajime_dht_measurement/config/port_map.txt"
 LOG_FILE = 'pcap_parse.log'
 MIN_PORT = 20000
 MAX_PORT = 60000

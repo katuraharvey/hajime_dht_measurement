@@ -10,10 +10,12 @@ kad.h.
 **********Kadnode_Lookup**********
 Running kadnode_lookup is the simpler of the two. 
 
-To build, cd into kadnode_lookup and run make. Kadnode provides build
-instructions with dependencies for several OSes in directories named for the 
-OS. We have only tested on Debian and Ubuntu, for which the only dependency
-we required was libsodium (apt-get install libsodium-dev).
+We have only tested on Debian and Ubuntu, for which the only dependency
+we required was libsodium (apt-get install libsodium-dev). Kadnode provides 
+build instructions with dependencies for several OSes in directories named for 
+the OS. 
+
+To build, cd into kadnode_lookup and run make. 
 
 Since Hajime infohashes are computed based on the date, new
 infohases must be generated each day and written to the configurable infohash
@@ -26,12 +28,21 @@ out its next batch of lookups (max 16 minute delay).
 
 To start up KadNode, you'll need to give it a peerfile to join the DHT. A
 starter file is provided in config/start_peers.txt. Make a copy (the file will
-get overwritten) and pass it to KadNode using the --peerfile option. Then run KadNode:
+get overwritten) and pass it to KadNode using the --peerfile option. 
+Then run KadNode:
     ./build/kadnode --peerfile start_peers.txt
 
 Results will be written to daily log files in the directory defined in kad.h
-(defaults to lookup_data).
+(defaults to data/lookup).
 
+-----tl;dr-----
+cd scripts
+python update_infohashes.py
+cd ../kadnode_lookup
+sudo apt-get install libsodium-dev
+make
+cp ../config/start_peers.txt .
+./build/kadnode --peerfile start_peers.txt
 
 **********Kadnode_Announce**********
 Running kadnode_announce is more complicated: we're announcing to other Hajime
@@ -45,13 +56,18 @@ port range over which we make DHT announcements. We configure tcpdump to create
 a new capture file every N minutes (where n was 4 or 8). We monitor the directory
 to which the capture files are written to trigger a script that parses the
 connections, maps the ports back to infohashes, and logs results to file in the
-same format as kadnode_lookup. More briefly
+same format as kadnode_lookup. More briefly:
     1. Run tcpdump to capture incoming connections:
         sudo tcpdump udp and '(dst <your_ip> and dst portrange 20000-60000)' \
-        -nntSvv -s0 -G 240 -w /path/to/captures/announce_cap_%s
-    2. Run scripts/monitor_pcaps.sh, updating capture directory to monitor and
-        directory to write results to.
+        -nntSvv -s0 -G 240 -w ~/hajime_dht_measurement/data/captures/announce_cap_%s
+    2. Run scripts/announce/monitor_pcaps.sh, updating capture directory to 
+	monitor and directory to write results to.
+	
+	Dependencies for these scripts:
+		inotify-tools
+		python-scapy
 
-Then, build and start KadNode as in Kadnode Lookup. Results are written to daily
-log files in the directory defined in scripts/monitor_pcaps.sh
+Then, build and start KadNode as in Kadnode Lookup. Results are written to 
+daily log files in the directory defined in scripts/announce/monitor_pcaps.sh. 
+Note that Kadnode Announce collects significantly less data than Kadnode Lookup.
 

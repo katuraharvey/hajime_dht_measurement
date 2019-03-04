@@ -145,45 +145,42 @@ int values_add( const char query[], int port, time_t lifetime,
      * around. Infohashes to announce are read in from the infohash file. 
      * Filenames and paths are configurable and defined in kad.h
      */
-    FILE *port_map_file = fopen(PORT_MAP_FILENAME, "r+");
-	// Log port mapping
-    if(!port_map_file){
-        //sleep 1 second and try again
-        sleep(1);
-        port_map_file = fopen(PORT_MAP_FILENAME, "r+");
-        if (!port_map_file){
-            log_print("ERROR: Failed to open log file %s\n", PORT_MAP_FILENAME);
-            return 0;
-        }
-    }
-    
     char *line = NULL, *last_line = NULL;	
     size_t len = 0;
     ssize_t read;
     char *last_port;
     int next_port;
+    FILE *port_map_file = fopen(PORT_MAP_FILENAME, "r+");
 
-    // go to last line to get last used port
-    while ((read = getline(&line, &len, port_map_file)) != -1) {
-        last_line = line;
+    // Log port mapping
+    if(!port_map_file){
+        //sleep 1 second and try again
+        sleep(1);
+        port_map_file = fopen(PORT_MAP_FILENAME, "r+");
+        if (!port_map_file){
+	// doesn't exist, start at min port and create file
+        	port_map_file = fopen(PORT_MAP_FILENAME, "w");
+        	next_port = MIN_PORT;
+        }
     }
-    // First announcement - start at min port 
-    if(!last_line){
-        next_port = MIN_PORT;
-    }
-    // otherwise incremenet the last used port
     else{
-        last_port = strtok(line, " ");
-        next_port = atoi(last_port) + PORT_INCREMENT;
+	    // go to last line to get last used port
+	    while ((read = getline(&line, &len, port_map_file)) != -1) {
+		last_line = line;
+	    }
+	    // otherwise incremenet the last used port
+		last_port = strtok(line, " ");
+		next_port = atoi(last_port) + PORT_INCREMENT;
 
-        //wrap around
-        if(next_port >= MAX_PORT)
-            next_port = MIN_PORT;
+		//wrap around
+		if(next_port >= MAX_PORT)
+		    next_port = MIN_PORT;
+	    if(next_port < MIN_PORT){
+		log_print("ERROR getting port from port_map\n");
+		exit(1);
+	    }    
     }
-    if(next_port < MIN_PORT){
-        log_print("ERROR getting port from port_map\n");
-        exit(1);
-    }    
+
     /* Prepend new entry */
 	new = (struct value_t*) calloc( 1, sizeof(struct value_t) );
 	memcpy( new->id, id, SHA1_BIN_LENGTH );

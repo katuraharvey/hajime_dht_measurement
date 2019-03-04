@@ -189,8 +189,8 @@ void dht_callback_func( void *closure, int event, struct search *sr,
         rn->num_no_new_results_responses += 1;
         rn->sequential_no_new_results_responses += 1;
     }
-    values_debug_print("%ld Node %s returned %d results for infohash %s\n",
-            time_now_sec(), str_addr(&from_node->ss, buf0), 
+    values_debug_print("Node %s returned %d results for infohash %s\n",
+            str_addr(&from_node->ss, buf0), 
             num_returned_results, str_id(info_hash, buf1));
     
     // If 3x as many no new result responses as new responses, with at least
@@ -531,8 +531,8 @@ int kad_lookup_value( const char _query[], IP addr_array[], size_t *addr_num ,
 		rc = 2;
 	} 
     else if( is_new ) {
-        values_debug_print("%ld starting new search for %s\n", 
-                time_now_sec(), str_id(results->id, buf));
+        values_debug_print("starting new search for %s\n", 
+                 str_id(results->id, buf));
 		/* A new search was started */
 		dht_search( results->id, 0, gconf->af, dht_callback_func, NULL );
 		rc = 1;
