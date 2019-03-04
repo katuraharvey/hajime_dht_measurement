@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+set -e
+
+#Use resolver. Works for console apps.
+mkdir -p /etc/resolver/
+echo "nameserver ::1.53" > /etc/resolver/p2p
+
+#a helper function
+contains() {
+  local x; local n="$1"; shift;
+  for x in $@; do
+    [ "$x" = "$n" ] && return 0
+  done
+  return 1
+}
+
+#Add localhost to DNS server list for every device.
+#The Safari Browser seems to ignore this - let us try it nevertheless.
+for device in $(networksetup listallnetworkservices | tail -n+2 | tr '*\n' ' '); do
+  servers="$(networksetup -getdnsservers $device | tr '\n' ' ')"
+  contains 'DNS' $servers && servers=""
+  contains '::1' $servers && continue
+  networksetup -setdnsservers "$device" $servers '::1'
+done
+
+#launch KadNode
+launchctl load "/Library/LaunchDaemons/p2p.kadnode.plist"
+
+exit 0

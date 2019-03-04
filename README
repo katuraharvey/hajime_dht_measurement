@@ -1,0 +1,57 @@
+These are the two programs used to collect our  active DHT measurement datasets.
+Each program is a modified version of KadNode V1.0.0
+(https://github.com/mwarning/KadNode/tree/2c42e4a38f314e8d7dbdd4bc40fbc34da18fb65f).
+The version in kadnode_lookup collects the seeder set, and the version in
+kadnode_announce collects the leecher dataset. 
+
+Files read and written by the programs are defined in each version in the file
+kad.h. 
+
+**********Kadnode_Lookup**********
+Running kadnode_lookup is the simpler of the two. 
+
+To build, cd into kadnode_lookup and run make. Kadnode provides build
+instructions with dependencies for several OSes in directories named for the 
+OS. We have only tested on Debian and Ubuntu, for which the only dependency
+we required was libsodium (apt-get install libsodium-dev).
+
+Since Hajime infohashes are computed based on the date, new
+infohases must be generated each day and written to the configurable infohash
+file defined in kad.h. We have done this by scheduling a cron job to run every
+day at midnight UTC time that runs scripts/update_infohashes.sh. This script
+reads from the Hajime config file, which at this time must be updated manually.
+If a new config file is released, run scripts.update_infohashes.sh to update the
+infohash file; kadnode_lookup will see the updates in this file when it sends
+out its next batch of lookups (max 16 minute delay).
+
+To start up KadNode, you'll need to give it a peerfile to join the DHT. A
+starter file is provided in config/start_peers.txt. Make a copy (the file will
+get overwritten) and pass it to KadNode using the --peerfile option. Then run KadNode:
+    ./build/kadnode --peerfile start_peers.txt
+
+Results will be written to daily log files in the directory defined in kad.h
+(defaults to lookup_data).
+
+
+**********Kadnode_Announce**********
+Running kadnode_announce is more complicated: we're announcing to other Hajime
+bots that we are seeders for the payloads on specific ports, so our address may 
+be included in lookup results. Bots may then connect to us via uTP to attempt 
+to download the file. Thus we must additionally listen for incoming connections, 
+and map the bot back to an infohash based on the port.
+
+We have done this by running tcpdump to record incoming udp connections on the
+port range over which we make DHT announcements. We configure tcpdump to create
+a new capture file every N minutes (where n was 4 or 8). We monitor the directory
+to which the capture files are written to trigger a script that parses the
+connections, maps the ports back to infohashes, and logs results to file in the
+same format as kadnode_lookup. More briefly
+    1. Run tcpdump to capture incoming connections:
+        sudo tcpdump udp and '(dst <your_ip> and dst portrange 20000-60000)' \
+        -nntSvv -s0 -G 240 -w /path/to/captures/announce_cap_%s
+    2. Run scripts/monitor_pcaps.sh, updating capture directory to monitor and
+        directory to write results to.
+
+Then, build and start KadNode as in Kadnode Lookup. Results are written to daily
+log files in the directory defined in scripts/monitor_pcaps.sh
+

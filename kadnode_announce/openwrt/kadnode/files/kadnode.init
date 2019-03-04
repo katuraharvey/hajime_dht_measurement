@@ -1,0 +1,79 @@
+#!/bin/sh /etc/rc.common
+
+START=95
+
+LIST_SEP="
+"
+KADNODE_BIN=/usr/bin/kadnode
+
+count() {
+	echo $#
+}
+
+append_opts() {
+	local p; local vl; local v; local s="$1"; shift
+	for p in $*; do
+		config_get vl "$s" "$p"
+		local IFS_OLD="$IFS"; IFS="
+"
+		for v in $vl; do
+			[ -n "$v" ] && OPTS="$OPTS
+--${p//_/-} ${v//'/\\'}"
+		done
+		IFS="$IFS_OLD"
+	done
+}
+
+append_opts_boolean() {
+  local p; local v; local s="$1"; shift
+  for p in $*; do
+        config_get_bool v "$s" "$p"  0
+        [ $v -gt 0  ] && OPTS="$OPTS
+--${p//_/-}"
+  done
+}
+
+section_enabled() {
+	config_get_bool enabled "$1" 'enabled' 0
+	[ $enabled -gt 0 ]
+}
+
+start_instance() {
+	local s="$1"
+
+	section_enabled "$s" || return
+
+	SERVICE_PID_FILE="/var/run/kadnode.$s.pid"
+	CONFIG_FILE="/tmp/kadnode.$s.conf"
+	OPTS=""
+
+	append_opts "$s" node_id user port ifname cmd_port web_port\
+		lpd_addr mode dns_port verbosity peerfile config \
+		auth_add_pkey auth_add_skey value_id query_tld
+
+	append_opts_boolean "$s" lpd_disable fwd_disable
+
+	echo "$OPTS" > $CONFIG_FILE
+
+	eval service_start "'$KADNODE_BIN'" --daemon --pidfile "'$SERVICE_PID_FILE'" --config "'$CONFIG_FILE'"
+}
+
+stop_instance() {
+	local s="$1"
+
+	SERVICE_PID_FILE="/var/run/kadnode.$s.pid"
+	service_stop "$KADNODE_BIN"
+
+	rm -f "$SERVICE_PID_FILE"
+	rm -f "$CONFIG_FILE"
+}
+
+start() {
+	config_load 'kadnode'
+	config_foreach start_instance 'kadnode'
+}
+
+stop() {
+	config_load 'kadnode'
+	config_foreach stop_instance 'kadnode'
+}

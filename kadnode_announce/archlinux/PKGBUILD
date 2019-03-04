@@ -1,0 +1,39 @@
+# Maintainer: Moritz Warning <moritzwarning@web.de>
+
+pkgname=kadnode
+pkgver=0.9.2
+pkgrel=1
+
+pkgdesc='A P2P based DNS service using the Kademlia Distributed Hash Table (DHT)'
+arch=('x86_64' 'i686')
+url='http://github.com/mwarning/KadNode'
+license=('MIT')
+
+backup=('etc/kadnode.conf' 'etc/peers.txt')
+
+source=(https://github.com/mwarning/KadNode/archive/v${pkgver}.tar.gz)
+
+md5sums=('SKIP')
+
+install="kadnode.install"
+
+build() {
+	cd KadNode-${pkgver}
+	make FEATURES="auth lpd cmd nss"
+}
+
+package() {
+	cd KadNode-${pkgver}
+
+	install -Dm755 build/kadnode "$pkgdir"/usr/bin/kadnode
+	install -Dm755 build/kadnode-ctl "$pkgdir"/usr/bin/kadnode-ctl
+
+	install -Dm644 build/libnss_kadnode.so.2 "$pkgdir"/lib/libnss_kadnode.so.2
+
+	# package systemd units go to /usr/lib/systemd, /etc is for admin override
+	install -Dm644 archlinux/kadnode.service "$pkgdir"/usr/lib/systemd/system/kadnode.service
+	install -Dm644 LICENSE "$pkgdir"/usr/share/licenses/"$pkgname"/LICENSE
+
+	install -Dm644 misc/kadnode.conf "$pkgdir"/etc/kadnode/kadnode.conf
+	install -Dm644 misc/peers.txt "$pkgdir"/etc/kadnode/peers.txt
+}

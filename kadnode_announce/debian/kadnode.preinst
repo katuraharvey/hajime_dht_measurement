@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+	install|upgrade)
+		sed -i -e '/kadnode/!s/^\(hosts:.*\)dns\(.*\)/\1kadnode dns\2/' /etc/nsswitch.conf 2> /dev/null
+		;;
+esac
+
+#DEBHELPER#

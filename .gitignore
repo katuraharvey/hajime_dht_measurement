@@ -1,0 +1,5 @@
+*.o
+*.log
+*.swp
+*.pyc
+*/build

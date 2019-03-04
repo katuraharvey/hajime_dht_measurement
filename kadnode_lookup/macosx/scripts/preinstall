@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+set -e
+
+launchctl unload "/Library/LaunchDaemons/p2p.kadnode.plist" || true
+
+exit 0
